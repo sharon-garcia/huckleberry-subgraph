@@ -2,14 +2,24 @@ type FINN @entity {
   id: ID! # blockNumber
   timestamp: BigInt!
   totalFees: BigInt!
-  transfers: [Transfer!]! @derivedFrom(field:"finn")
+  transfers: [TransferEvent!]! @derivedFrom(field:"finn")
 }
 
 # event Transfer(address indexed from, address indexed to, uint256 value);
-type Transfer @entity {
+type TransferEvent @entity {
   id: ID! # txHash.logIndex
   finn: FINN!
+  trace: Trace! #txHash
   from: Bytes!
   value: BigInt!
   to: Bytes!
+}
+
+type Trace @entity {
+  id: ID! #txHash
+  input: Bytes!
+  from: Bytes!
+  to: Bytes
+  value: BigInt
+  details: [TransferEvent!]! @derivedFrom(field:"trace")
 }
