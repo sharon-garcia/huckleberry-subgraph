@@ -1,4 +1,4 @@
-specVersion: 0.0.2
+specVersion: 0.0.1
 description: Huckleberry is a decentralized protocol for automated token exchange on Moonriver Kusama.
 repository: https://github.com/sharon-garcia/huckleberry-subgraph
 schema:
@@ -17,9 +17,6 @@ dataSources:
       language: wasm/assemblyscript
       file: ./src/mappings/finn.ts
       entities:
-        - FINN
-        - TransferEvent
-        - Trace
         - FinnContract
       abis:
         - name: FinnContract
