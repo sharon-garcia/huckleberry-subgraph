@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "repository": "https://github.com/sharon-garcia/huckleberry-subgraph",
   "license": "GPL-3.0-or-later",
+  "type": "module",
   "scripts": {
     "codegen": "graph codegen --output-dir src/types/",
     "build": "graph build",
-    "create-local": "graph create wanswap/wanswap-subgraph --node http://127.0.0.1:8020",
-    "deploy-local": "graph deploy wanswap/wanswap-subgraph --debug --ipfs http://127.0.0.1:5001 --node http://127.0.0.1:8020",
-    "remove": "graph remove wanswap/wanswap-subgraph --node http://127.0.0.1:8020",
+    "create-local": "graph create huckleberry/huckleberry-subgraph --node http://127.0.0.1:8020",
+    "deploy-local": "graph deploy huckleberry/huckleberry-subgraph --debug --ipfs http://127.0.0.1:5001 --node http://127.0.0.1:8020",
+    "remove": "graph remove huckleberry/huckleberry-subgraph --node http://127.0.0.1:8020",
     "deploy": "graph deploy ianlapham/uniswapv2 --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ --debug",
     "deploy-staging": "graph deploy $THE_GRAPH_GITHUB_USER/$THE_GRAPH_SUBGRAPH_NAME /Uniswap --ipfs https://api.staging.thegraph.com/ipfs/ --node https://api.staging.thegraph.com/deploy/",
     "watch-local": "graph deploy wanswap/wanswap-subgraph --watch --debug --node http://127.0.0.1:8020/ --ipfs http://localhost:5001"
@@ -19,8 +20,15 @@
     "@graphprotocol/graph-ts": "^0.22.1",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
+    "apollo-cache-inmemory": "^1.6.6",
+    "apollo-client": "^2.6.10",
+    "apollo-link-http": "^1.5.17",
+    "bignumber.js": "9.0.0",
+    "dayjs": "^1.10.7",
     "eslint": "^8.0.0",
     "eslint-config-prettier": "^8.3.0",
+    "graphql-tag": "^2.12.5",
+    "node-fetch": "^3.0.0",
     "prettier": "^2.4.1",
     "typescript": "^4.4.3"
   }
