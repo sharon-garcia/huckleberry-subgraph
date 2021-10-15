@@ -1,7 +1,10 @@
 type FINN @entity {
   id: ID! # blockNumber
-  timestamp: BigInt!
+  lastFinnId: BigInt! @index(unique:true)
+  timestamp: BigInt! @index(unique:true)
   totalFees: BigInt!
+  transferAmount: BigInt!
+  totalTransferAmount: BigInt!
   transfers: [TransferEvent!]! @derivedFrom(field:"finn")
 }
 
@@ -22,4 +25,10 @@ type TransferEvent @entity {
   to: Bytes!
   finn: FINN!
   trace: Trace!
+}
+
+type FinnState @entity {
+  id: ID! # latest
+  finnId: BigInt!
+  lastFinnId: BigInt!
 }

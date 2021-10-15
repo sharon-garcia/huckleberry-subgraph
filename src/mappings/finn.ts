@@ -1,22 +1,20 @@
 /* eslint-disable prefer-const */
 import { BigInt, Address, ethereum, Bytes } from '@graphprotocol/graph-ts'
 import { FinnContract, Transfer } from '../types/FinnSubgraph/FinnContract'
-import { Trace, FINN, TransferEvent } from '../types/schema'
+import { Trace, FINN, TransferEvent, FinnState } from '../types/schema'
 // import { Transfer, transfer, transferFrom } from '../types/templates/FinnContract/FinnContract'
-import { SEPARATOR } from './config'
+import { SEPARATOR, FINN_ADDRESS, LATEST_BLOCK } from './config'
 import { getEventID } from './util'
 
-export function handleTransferEvent(event: Transfer): void {
-  // ignore initial transfers for first adds
-  // if (event.params.to.toHexString() == ADDRESS_ZERO && event.params.value.equals(BigInt.fromI32(1000))) {
-  //   return
-  // }
+const ZERO = BigInt.fromI32(0)
 
-  // let finnContract = FinnContract.bind(event.address)
+export function handleTransferEvent(event: Transfer): void {
+
+  let lastFinnId = findAndUpdateLastFinnId(event.block.number)
+
   let finn = FINN.load(event.block.number.toString())
   if (!finn) {
-    finn = createFinn(event)
-    // finn = createFinn(event, finnContract)
+    finn = createFinn(event, lastFinnId)
   }
 
   let trace = Trace.load(event.transaction.hash.toHexString())
@@ -24,32 +22,43 @@ export function handleTransferEvent(event: Transfer): void {
     trace = createTransferTrace(event)
   }
 
-  // let finnDecimals = finnContract.decimals()
-  // // convert to uint8
-  // let u8FinnDecimals = new Uint8ClampedArray(1)
-  // u8FinnDecimals[0] = finnDecimals
-  // let outputValue = (event.params.value).div(BigInt.fromI32(10).pow(u8FinnDecimals[0]))
-
   // get or create transaction
-  // let eventID = getEventID(SEPARATOR, [event.transaction.hash.toHexString(), event.logIndex.toString(), event.transactionLogIndex.toString()])
+  let rollbackEventValue = ZERO
   let eventID = getEventID(SEPARATOR, [event.transaction.hash.toHexString(), event.logIndex.toString()])
   let transferEvent = TransferEvent.load(eventID)
   if (!transferEvent) {
     transferEvent = new TransferEvent(eventID)
+  } else {
+    rollbackEventValue = transferEvent.value
   }
+
   transferEvent.finn = finn.id
   transferEvent.trace = trace.id
   transferEvent.from = event.params.from
   transferEvent.to = event.params.to
-  // transferEvent.value = outputValue
   transferEvent.value = event.params.value
   transferEvent.save()
+
+  let eventValue = event.params.value
+  finn.transferAmount = finn.transferAmount.plus(eventValue).minus(rollbackEventValue)
+  if (lastFinnId.equals(ZERO)) {
+    finn.totalTransferAmount = finn.transferAmount
+  } else {
+    let lastFinn = FINN.load(lastFinnId.toString())
+    if (!lastFinn) {
+      throw new Error("FINN doesn't exist: " + lastFinnId.toString())
+    }
+    finn.totalTransferAmount = lastFinn.totalTransferAmount.plus(finn.transferAmount)
+  }
+  finn.save()
 }
 
-function createFinn(event: Transfer): FINN {
+function createFinn(event: Transfer, lastFinnId: BigInt): FINN {
   let finn = new FINN(event.block.number.toString())
   finn.timestamp = event.block.timestamp
-
+  finn.lastFinnId = lastFinnId
+  finn.transferAmount = BigInt.fromI32(0)
+  finn.totalTransferAmount = BigInt.fromI32(0)
   let finnContract = FinnContract.bind(event.address)
   finn.totalFees =  finnContract.totalFees()
   finn.save()
@@ -66,6 +75,40 @@ function createTransferTrace(event: Transfer): Trace {
   trace.save()
   return trace
 }
+
+function findAndUpdateLastFinnId(newId: BigInt): BigInt {
+  let finnState = FinnState.load(LATEST_BLOCK)
+  if (!finnState) {
+    finnState = new FinnState(LATEST_BLOCK)
+    finnState.lastFinnId = ZERO
+    finnState.finnId = newId
+  } else if (finnState.finnId.notEqual(newId)) {
+    finnState.lastFinnId = finnState.finnId
+    finnState.finnId = newId
+  }
+  finnState.save()
+  return finnState.lastFinnId
+}
+
+// function createTotalFees(block: ethereum.Block): TotalFees {
+//   let totalFees = new TotalFees(block.number)
+//   let finnContract = FinnContract.bind(FINN_ADDRESS)
+//   totalFees.timestamp = block.timestamp
+//   totalFees.totalFees = finnContract.totalFees()
+//   totalFees.save()
+// }
+
+// export function handleBlockFinnTotalFees(block: ethereum.Block): void {
+//   let totalFees = TotalFees.load(block.number)
+//   if (!totalFees) {
+//     createTotalFees(block)
+//   } else {
+//     let finnContract = FinnContract.bind(FINN_ADDRESS)
+//     totalFees.timestamp = block.timestamp
+//     totalFees.totalFees = finnContract.totalFees()
+//     totalFees.save()
+//   }
+// }
 
 // export function handleTransferFunction(func: transfer): void {}
 

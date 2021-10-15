@@ -20,20 +20,26 @@ export const getFinnAPY = async function getFinnAPY(historyDay = 7) {
         timestampFrom: utcHistoryDayBack,
         timestampTo: utcCurrentTime.unix(),
       },
-      fetchPolicy: 'cache-first',
+      // fetchPolicy: 'cache-first',
+      fetchPolicy: 'no-cache',
     })
 
-    let data = result.data.finns
-    let oldestTotalFees = new BigNumber(data[0].totalFees)
-    let latestTotalFees = new BigNumber(data[data.length - 1].totalFees)
-    let totalTransferAmount = data.reduce((reduced, next) => {
-      for (let transfer of next.transfers) {
-        reduced = reduced.plus(new BigNumber(transfer.value));
-      }
-      return reduced;
-    }, new BigNumber(0));
+    console.log("result:", JSON.stringify(result))
+    let apy = new BigNumber(0)
+    let {minFinn, maxFinn} = result.data
+    if (!!minFinn.length && !!maxFinn.length) {
+      // console.log("all totalFees:", data.map(v => v.totalFees))
+      let oldestTotalFees = new BigNumber(minFinn[0].totalFees)
+      let oldestTotalTransfered = new BigNumber(minFinn[0].totalTransferAmount)
+      let latestTotalFees = new BigNumber(maxFinn[0].totalFees)
+      let latestTotalTransfered = new BigNumber(maxFinn[0].totalTransferAmount)
+      // console.log("oldestTotalFees:", oldestTotalFees.toString(10))
+      // console.log("oldestTotalTransfered:", oldestTotalTransfered.toString(10))
+      // console.log("latestTotalFees:", latestTotalFees.toString(10))
+      // console.log("latestTotalTransfered:", latestTotalTransfered.toString(10))
 
-    let apy = latestTotalFees.minus(oldestTotalFees).multipliedBy(oneYearPercent).dividedBy(totalTransferAmount).dividedBy(new BigNumber(historyDay))
+      apy = latestTotalFees.minus(oldestTotalFees).multipliedBy(oneYearPercent).dividedBy(latestTotalTransfered.minus(oldestTotalTransfered)).dividedBy(new BigNumber(historyDay))
+    }
     return apy.toString(10)
   } catch (err) {
     console.log('error: ', err)
