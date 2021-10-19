@@ -10,7 +10,6 @@ export const FINN_HISTORY_QUERY = gql`
     ) {
       id
       totalFees
-      totalTransferAmount
     }
     maxFinn:finns(
       orderBy: timestamp
@@ -20,7 +19,6 @@ export const FINN_HISTORY_QUERY = gql`
     ) {
       id
       totalFees
-      totalTransferAmount
     }
   }
 `
